@@ -44,6 +44,7 @@ TinyGsmClient client(modem);
 
 String gps_message;
 bool gps_pwr_status;
+float lat , lon,spd,gpsAlti;
 
 void connectGPRS(){
     // GPRS connection parameters are usually set after network registration
@@ -236,7 +237,7 @@ String gpsLogging(){
 }
 
 bool gpsFix(){
-    float lat , lon,spd,gpsAlti;
+   
     
     if(!modem.getGPS(&lat,&lon,&spd,&gpsAlti)){
         digitalWrite(LED_PIN, !digitalRead(LED_PIN));

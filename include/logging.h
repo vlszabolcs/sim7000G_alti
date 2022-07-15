@@ -1,10 +1,10 @@
-String head = "GNSS status,Fix status,dTime,Latitude,Longitude,MSL Altitude,Speed ,Course,Fix Mode,Reserved1,HDOP,PDOP,VDOP,Reserved2,GNSS Satellites in View,GPS Satellites Used,GLONASS Satellites used,Reserved3,C/N0 max,HPA,VPA,pressure,temperature,humidity,altitude";
+String head = "GNSS status,Fix status,dTime,Latitude,Longitude,MSL Altitude,Speed ,Course,Fix Mode,Reserved1,HDOP,PDOP,VDOP,Reserved2,GNSS Satellites in View,GPS Satellites Used,GLONASS Satellites used,Reserved3,C/N0 max,HPA,VPA,pressure,temperature,humidity,altitude,Battery";
 
 String path;
 File file;
 bool once_run = false;
 bool file_name_exist= false;
-float lat, lon;
+
 
 
 bool creat_directory(String directory_name){

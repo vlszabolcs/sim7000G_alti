@@ -113,11 +113,26 @@ void loop(){
 
     if(millis() > time_now + period){
         time_now = millis();
-        
-        String gnss_message=gpsLogging()+","+bme280_data();
+        read_bat();
+        String gnss_message=gpsLogging()+","+bme280_data()+","+BP;
         if (gpsFix()){
         logging_csv("GNSS",gnss_message);
+        display.clearDisplay();
+        display.setCursor(0, 0);
+        display.println(String(lat)+";"+String(lon)+";"+String(gpsAlti));
+        display.println(bme280_data());
+        display.print((BP));
+        display.println("%");
+        display.display();
+        display.display();
         }else{
+          display.clearDisplay();
+          display.setCursor(0, 0);
+          display.println("GNSS connecting...");
+          display.println(bme280_data());
+          display.print((BP));
+          display.println("%");
+          display.display();
           Serial.println("don't logging");
           Serial.println(gnss_message);
         }
