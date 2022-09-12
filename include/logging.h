@@ -72,6 +72,7 @@ void logging_csv(String log_mode, String message){
         Serial.println("don't logging");
         Serial.println(message);
         
+        
     }
 }
 

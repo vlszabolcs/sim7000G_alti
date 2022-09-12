@@ -44,7 +44,7 @@ TinyGsmClient client(modem);
 
 String gps_message;
 bool gps_pwr_status;
-float lat , lon,spd,gpsAlti;
+float lat,lon,spd,gpsAlti;
 
 void connectGPRS(){
     // GPRS connection parameters are usually set after network registration
@@ -56,42 +56,20 @@ void connectGPRS(){
         return;
     }
     SerialMon.println(" success");
-    if (modem.isGprsConnected()) { SerialMon.println("GPRS connected"); }
+    if (modem.isGprsConnected()) { 
+        SerialMon.println("GPRS connected"); 
 
-}
-
-void connectNetwork(){
-
-     SerialMon.print("Waiting for network...");
- /*
-    bool isConnected = false;
-    int tryCount = 60;
-
-    while (tryCount--) {
-        int16_t signal =  modem.getSignalQuality();
-        Serial.print("Signal: ");
-        Serial.print(signal);
-        Serial.print(" ");
-        Serial.print("isNetworkConnected: ");
-        isConnected = modem.isNetworkConnected();
-        Serial.println( isConnected ? "CONNECT" : "NO CONNECT");
-        if (isConnected) {
-            break;
-        }
-            digitalWrite(LED_PIN, !digitalRead(LED_PIN));
-        }
-*/
-     
-
-  if (modem.isNetworkConnected()) { SerialMon.println("Network connected"); }
- 
-    modem.sendAT("+CCLK?");
-    if (modem.waitResponse(10000L) != 1) {
-        DBG(" +CCLK? false ");
     }
-    delay(1000);
+    /*
+    modem.sendAT("+CNTPCID=1");   
+    delay(10);
+    String server="1.hu.pool.ntp.org";
+    modem.sendAT("+CNTP="+server+",8");
+    delay(5000);
+    modem.sendAT("+CNTP");
+    //modem.NTPServerSync("0.hu.pool.ntp.org", 8);
+    */
 }
-
 
 //BASIC MODULE CONTROLL
 void modemPowerOn() {
@@ -99,7 +77,6 @@ void modemPowerOn() {
     digitalWrite(PWR_PIN, LOW);
     delay(1000);    //Datasheet Ton mintues = 1S
     digitalWrite(PWR_PIN, HIGH);
-    connectNetwork();
 }
 
 void modemPowerOff() {
@@ -115,54 +92,55 @@ void modemRestart() {
     modemPowerOn();
 }
 
-bool reConnGPRS(){
-    if (!modem.isGprsConnected()) {
-      SerialMon.println("GPRS disconnected!");
-      SerialMon.print(F("Connecting to "));
-      SerialMon.print(apn);
-      if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {
-        SerialMon.println(" fail");
-        delay(10000);
-        return modem.gprsConnect(apn, gprsUser, gprsPass);
-      }
-      if (modem.isGprsConnected()) { 
-        SerialMon.println("GPRS reconnected"); 
-        
+void connectNetwork(){
+
+    SerialMon.print("Waiting for network...");
+
+    bool isConnected = false;
+    int tryCount = 60;
+    while (tryCount--) {
+        int16_t signal =  modem.getSignalQuality();
+        Serial.print("Signal: ");
+        Serial.print(signal);
+        Serial.print(" ");
+        Serial.print("isNetworkConnected: ");
+        isConnected = modem.isNetworkConnected();
+        Serial.println( isConnected ? "CONNECT" : "NO CONNECT");
+        if (isConnected) {
+            break;
         }
-    }
-    return modem.isGprsConnected(); 
-}
+        delay(1000);
+        digitalWrite(LED_PIN, !digitalRead(LED_PIN));
+        }
 
-bool reConnNetwork(){
-
-  if (!modem.isNetworkConnected()) {
-    SerialMon.println("Network disconnected");
-    if (!modem.waitForNetwork(180000L, true)) {
-      SerialMon.println(" fail");
-      delay(10000);
-      return modem.waitForNetwork(180000L, true);
-    }
-    if (modem.isNetworkConnected()) {
-      SerialMon.println("Network re-connected");
-     
-    }
-  }
-     return modem.isNetworkConnected();
+       delay(1000);
 }
 
 
 void gsmSetup(){
-    modemPowerOn();
-    SerialAT.begin(UART_BAUD, SERIAL_8N1, PIN_RX, PIN_TX);
-    connectNetwork();
+     pinMode(PWR_PIN, OUTPUT);
+  digitalWrite(PWR_PIN, HIGH);
+  delay(10);
+  digitalWrite(PWR_PIN, LOW);
+  delay(1010); //Ton 1sec
+  digitalWrite(PWR_PIN, HIGH);
+    delay(4510);
+
+  // Set baud rate
+  SerialAT.begin(9600, SERIAL_8N1, PIN_RX, PIN_TX);
+  delay(6000);
+
+   // delay(10000);
+    //SerialAT.begin(UART_BAUD, SERIAL_8N1, PIN_RX, PIN_TX);
+    
     if (!modem.testAT()){
         Serial.println("Failed to restart modem, attempting to continue without restarting");
-        modemRestart();
+        //modemRestart();
         return;
     }
+    connectNetwork();
+
 }
-
-
 
 //GPS CONTROL
 
@@ -238,7 +216,6 @@ String gpsLogging(){
 
 bool gpsFix(){
    
-    
     if(!modem.getGPS(&lat,&lon,&spd,&gpsAlti)){
         digitalWrite(LED_PIN, !digitalRead(LED_PIN));
         delay(10);
@@ -251,7 +228,7 @@ bool gpsFix(){
 String network_time(){
     int   year,month,day,hour,min,sec;
     float timezone;
-        
+   
     modem.getNetworkTime(&year,&month,&day,&hour,&min,&sec,&timezone);
     String networkTime=String(year)+String(month)+String(day)+String(hour)+String(min)+String(sec);
     

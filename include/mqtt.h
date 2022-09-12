@@ -10,7 +10,11 @@ PubSubClient  mqtt(client);
 
 const char* pres_topic="AxlHacke/feeds/bme280.pressure";
 const char* temp_topic="AxlHacke/feeds/bme280.temperature";
-const char* humi_topic="AxlHacke/feeds/bme280.humidity";
+const char* humi_topic="AxlHacke/feeds/station.humidity";
+const char* gps_topic="AxlHacke/feeds/sim7000g.gps";
+const char* device_func="AxlHacke/feeds/sim7000g.menu";
+
+const char* slp_topic="AxlHacke/feeds/station.slpressure";
 
 uint32_t lastReconnectAttempt = 0;
 
@@ -23,7 +27,27 @@ void mqttCallback(char* topic, byte* payload, unsigned int len) {
   Serial.print("Message arrived [");
   Serial.print(topic);
   Serial.print("]: ");
-  Serial.write(payload, len);
+  //Serial.write(payload,len);
+  char buff_p[len];
+  for (int i = 0; i < len; i++){
+    Serial.print((char)payload[i]);
+    buff_p[i] = (char)payload[i];
+  }
+  buff_p[len] = '\0';
+  String msg_p = String(buff_p);
+  float income = msg_p.toFloat(); //to float
+  if (String(topic)==String(slp_topic)){
+    Serial.print("Ez nyomás: ");
+    Serial.print(income);
+    presCorrig=income;
+    (SD.open("/lastPresCalc.txt",FILE_WRITE)).print(income);
+  }
+  else if(String(topic)==String(device_func)){
+    Serial.print("Ez a menü: ");
+    Serial.print(income);
+    function=income;
+  }
+
   Serial.println();
 }
 
@@ -31,10 +55,8 @@ void mqttCallback(char* topic, byte* payload, unsigned int len) {
 boolean mqttConnect() {
   Serial.print("Connecting to ");
   Serial.print(MQTT_BROKER);
-
   // Connect to MQTT Broker
   boolean status = mqtt.connect("SIM7000G_alti",MQTT_USER,MQTT_PASSWORD);
-
   // Or, if you want to authenticate MQTT:
   // boolean status = mqtt.connect("GsmClientName", "mqtt_user", "mqtt_pass");
 
@@ -44,19 +66,21 @@ boolean mqttConnect() {
   }
   Serial.println(" success");
   
-  mqtt.subscribe("AxlHacke/feeds/photocell");
+  mqtt.subscribe(slp_topic);
+  mqtt.subscribe(humi_topic);
+  mqtt.subscribe(device_func);
+
   return mqtt.connected();
 }
 
 bool mqttSetup(){
     connectGPRS();
+    delay(1000);
     mqtt.setServer(MQTT_BROKER, MQTT_PORT);
     mqtt.setCallback(mqttCallback);
     status = true;
-   return status;
+    return status;
 }
-
-
 
 void mqttPublish ( const char* topicsPath,float data){
     char conString[8];
@@ -66,13 +90,11 @@ void mqttPublish ( const char* topicsPath,float data){
     mqtt.publish(topicsPath, conString );
 }
 
-void mqttLoop(){
-  
-    
 
-   
-   if (!mqtt.connected()) {
-    SerialMon.println("=== MQTT NOT CONNECTED ===");
+
+void mqttLoop(){
+  if (!mqtt.connected()) {
+    Serial.println("=== MQTT NOT CONNECTED ===");
     // Reconnect every 10 seconds
     uint32_t t = millis();
     if (t - lastReconnectAttempt > 10000L) {
@@ -82,17 +104,12 @@ void mqttLoop(){
     delay(100);
     return;
   }
-
-   if(millis() > time_nowMQTT + periodMQTT){
+    mqtt.loop();
+  if(millis() > time_nowMQTT + periodMQTT){
     time_nowMQTT = millis();
-     
+    mqttPublish(gps_topic,1);
     
-   
-
-        mqttPublish(pres_topic,pres);
-        mqttPublish(temp_topic,temp);
-        mqttPublish(humi_topic,humi);
-    }
+  }
 }
 
 

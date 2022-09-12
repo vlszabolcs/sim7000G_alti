@@ -9,13 +9,13 @@ String sensor_message;
 
 
 String bme280_data () {
-  
   pres = envSensor.readPressure() / 100.0F;
-  temp = envSensor.readTemperature()-6;
+  temp = envSensor.readTemperature()-1;
   presAlti = envSensor.readAltitude(presCorrig);
   humi = envSensor.readHumidity();
   sensor_message= String(pres)  + "," + String(temp) + "," + String(humi) + "," +String(presAlti);
   return sensor_message;
+ 
 }
 
 void justBME280(){

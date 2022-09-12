@@ -7,13 +7,14 @@
 #include <gsm_function.h>
 #include <bmp280_function.h>
 #include <logging.h>
-#include <mqtt.h>
+
 #include <screen.h>
 
 const int period= 1000;
 const int periodBat=1000;
 unsigned long time_now = 0;
 int function=1;
+#include <mqtt.h>
 int lastFunction;
 
 int BP = 0;
@@ -72,21 +73,22 @@ void read_bat() {         // reads and returns the battery voltage
 
 void setup(){
   Serial.begin(115200);
-  envSensor.begin(0x76);
-  screen_setup();
-  sdCardSetup();
+
+  gsmSetup();
   
+  sdCardSetup();
+  delay(1000);
+  screen_setup();
+  delay(1000);
+  envSensor.begin(0x76);
   
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, HIGH);
   pinMode(PIN_BAT, INPUT);
 
-  gsmSetup();
-  
-  
-  Serial.println("EZ A SETUP IDŐ:"+modem.getGSMDateTime(DATE_FULL));
+  mqttSetup();
+ 
   delay(1000);
-  //mqttSetup();
 }
 void loop(){
 
@@ -103,17 +105,21 @@ void loop(){
     function=c.toInt();
     };
     
-  
+   if (modem.isGprsConnected()) {  mqttLoop();}
   
   switch(function) {
     case 1: // Logging
+
     if (!gps_pwr_status){
         Serial.println("GPS power status: "+String(enableGPS(0)));
+    
     }
 
     if(millis() > time_now + period){
         time_now = millis();
         read_bat();
+        
+       
         String gnss_message=gpsLogging()+","+bme280_data()+","+BP;
         if (gpsFix()){
         logging_csv("GNSS",gnss_message);
@@ -128,7 +134,8 @@ void loop(){
         }else{
           display.clearDisplay();
           display.setCursor(0, 0);
-          display.println("GNSS connecting...");
+          display.print("GNSS connecting...");
+          display.println(gps_pwr_status);
           display.println(bme280_data());
           display.print((BP));
           display.println("%");
@@ -136,16 +143,14 @@ void loop(){
           Serial.println("don't logging");
           Serial.println(gnss_message);
         }
-      
-               
-      }
+    }
       //Serial.println(head);
       break;
     case 2: //BME Function
       if(millis() > time_now + period){
         time_now = millis();
         justBME280();
-        //mqttLoop();        
+              
       }
       break;
 
@@ -173,13 +178,24 @@ void loop(){
       }
       break;
     case 4:
-      Serial.println();
-      Serial.println("new function: "+String(function));
-      Serial.println("old function: "+String(lastFunction));
-      Serial.println();
-      break;
+
+        while(1){
+        while (SerialAT.available()) {
+          SerialMon.write(SerialAT.read());
+        }
+        while (SerialMon.available()) {
+         SerialAT.write(SerialMon.read());
+        }
+        }
+    
+
     default:
+      if(millis() > time_now + period){
+        time_now = millis();
+
       Serial.println("choos on option 1 or 2");
+      
+      }
       break;
       
       
