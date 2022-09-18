@@ -46,30 +46,6 @@ String gps_message;
 bool gps_pwr_status;
 float lat,lon,spd,gpsAlti;
 
-void connectGPRS(){
-    // GPRS connection parameters are usually set after network registration
-    SerialMon.print(F("Connecting to "));
-    SerialMon.print(apn);
-    if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {
-        SerialMon.println(" fail");
-        delay(10000);
-        return;
-    }
-    SerialMon.println(" success");
-    if (modem.isGprsConnected()) { 
-        SerialMon.println("GPRS connected"); 
-
-    }
-    /*
-    modem.sendAT("+CNTPCID=1");   
-    delay(10);
-    String server="1.hu.pool.ntp.org";
-    modem.sendAT("+CNTP="+server+",8");
-    delay(5000);
-    modem.sendAT("+CNTP");
-    //modem.NTPServerSync("0.hu.pool.ntp.org", 8);
-    */
-}
 
 //BASIC MODULE CONTROLL
 void modemPowerOn() {
@@ -92,12 +68,47 @@ void modemRestart() {
     modemPowerOn();
 }
 
+void connectGPRS(){
+    // GPRS connection parameters are usually set after network registration
+    SerialMon.print(F("Connecting to "));
+    SerialMon.print(apn);
+    if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {
+        SerialMon.println(" fail");
+        delay(10000);
+        return;
+    }
+    SerialMon.println(" success");
+    if (modem.isGprsConnected()) { 
+        SerialMon.println("GPRS connected"); 
+
+    }
+  
+    /*
+    modem.sendAT("+CNTPCID=1");   
+    delay(10);
+    String server="1.hu.pool.ntp.org";
+    modem.sendAT("+CNTP="+server+",8");
+    delay(5000);
+    SerialAT.write("AT+CNTP");
+    */
+    //modem.sendAT("+CNTP");
+    modem.NTPServerSync("0.hu.pool.ntp.org", 8);
+    delay(1000);
+    SerialAT.write("AT+CNTP");
+  
+    
+
+    
+}
+
+
 void connectNetwork(){
 
     SerialMon.print("Waiting for network...");
 
     bool isConnected = false;
     int tryCount = 60;
+    modem.setNetworkMode(38);
     while (tryCount--) {
         int16_t signal =  modem.getSignalQuality();
         Serial.print("Signal: ");
@@ -118,36 +129,28 @@ void connectNetwork(){
 
 
 void gsmSetup(){
-     pinMode(PWR_PIN, OUTPUT);
-  digitalWrite(PWR_PIN, HIGH);
-  delay(10);
-  digitalWrite(PWR_PIN, LOW);
-  delay(1010); //Ton 1sec
-  digitalWrite(PWR_PIN, HIGH);
+    pinMode(PWR_PIN, OUTPUT);
+    digitalWrite(PWR_PIN, HIGH);
+    delay(10);
+    digitalWrite(PWR_PIN, LOW);
+    delay(1010); //Ton 1sec
+    digitalWrite(PWR_PIN, HIGH);
     delay(4510);
-
   // Set baud rate
   SerialAT.begin(9600, SERIAL_8N1, PIN_RX, PIN_TX);
   delay(6000);
-
-   // delay(10000);
-    //SerialAT.begin(UART_BAUD, SERIAL_8N1, PIN_RX, PIN_TX);
-    
     if (!modem.testAT()){
         Serial.println("Failed to restart modem, attempting to continue without restarting");
         //modemRestart();
         return;
     }
     connectNetwork();
-
+    connectGPRS();
 }
 
 //GPS CONTROL
 
 bool enableGPS(bool autoReport) {
-    // Set SIM7000G GPIO4 LOW ,turn on GPS power
-    // CMD:AT+SGPIO=0,4,1,1
-    // Only in version 20200415 is there a function to control GPS power
     modem.sendAT("+SGPIO=0,4,1,1");
     if (modem.waitResponse(10000L) != 1) {
         DBG("+SGPIO=0,4,1,1 false ");
@@ -183,9 +186,7 @@ bool enableGPS(bool autoReport) {
 }
  
 bool disableGPS(void) {
-    // Set SIM7000G GPIO4 LOW ,turn off GPS power
-    // CMD:AT+SGPIO=0,4,1,0
-    // Only in version 20200415 is there a function to control GPS power
+  
     modem.sendAT("+SGPIO=0,4,1,0");
     if (modem.waitResponse(10000L) != 1) {
         DBG("+SGPIO=0,4,1,0 false ");
@@ -198,11 +199,9 @@ bool disableGPS(void) {
 }
 
 String gpsLogging(){
-    
- 
+
      return modem.getGPSraw();
 
-  
    /*if (SerialAT.available()) {
             digitalWrite(LED_PIN, !digitalRead(LED_PIN));
             //c=SerialAT.read();  

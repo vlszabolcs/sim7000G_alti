@@ -17,6 +17,47 @@ void screen_setup(){
     display.setTextSize(1); // Draw 2X-scale text
     display.setTextColor(SSD1306_WHITE);
     display.setCursor(0, 0);
-
-
 }
+
+void gnss_connecting(){
+    display.clearDisplay();
+    display.setCursor(0, 0);
+    display.print("GNSS connecting...");
+    display.println(gps_pwr_status);
+    display.println(bme280_data());
+    display.print((BP));
+    display.println("%");
+    display.display();
+}
+
+void gnss_conected(){
+    display.clearDisplay();
+    display.setCursor(0, 0);
+    display.println(String(lat)+";"+String(lon)+";"+String(gpsAlti));
+    display.println(bme280_data());
+    display.print((BP));
+    display.println("%");
+    display.display();
+}
+
+void station_mode(){
+    display.clearDisplay();
+    display.setCursor(0, 0);
+    display.println((network_time()));
+   /* display.print(("Bat"));
+    display.print((BP));
+    display.println("%");*/
+    display.print("Temp: ");
+    display.print(temp);
+    display.println("*C");
+    display.print("Humi: ");
+    display.print(humi);
+    display.println("%");
+    display.print("Pres: ");
+    display.print(pres);
+    display.println("hPa");
+ 
+    display.display();
+}
+
+

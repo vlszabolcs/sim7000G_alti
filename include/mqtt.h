@@ -13,6 +13,7 @@ const char* temp_topic="AxlHacke/feeds/bme280.temperature";
 const char* humi_topic="AxlHacke/feeds/station.humidity";
 const char* gps_topic="AxlHacke/feeds/sim7000g.gps";
 const char* device_func="AxlHacke/feeds/sim7000g.menu";
+const char* alti_topic="AxlHacke/feeds/sim7000g.altitude";
 
 const char* slp_topic="AxlHacke/feeds/station.slpressure";
 
@@ -74,7 +75,7 @@ boolean mqttConnect() {
 }
 
 bool mqttSetup(){
-    connectGPRS();
+    
     delay(1000);
     mqtt.setServer(MQTT_BROKER, MQTT_PORT);
     mqtt.setCallback(mqttCallback);
@@ -107,7 +108,7 @@ void mqttLoop(){
     mqtt.loop();
   if(millis() > time_nowMQTT + periodMQTT){
     time_nowMQTT = millis();
-    mqttPublish(gps_topic,1);
+    mqttPublish(alti_topic,presAlti);
     
   }
 }
