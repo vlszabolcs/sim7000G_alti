@@ -92,15 +92,10 @@ void connectGPRS(){
     SerialAT.write("AT+CNTP");
     */
     //modem.sendAT("+CNTP");
-    modem.NTPServerSync("0.hu.pool.ntp.org", 8);
-    delay(1000);
-    SerialAT.write("AT+CNTP");
-  
-    
-
-    
+    //modem.NTPServerSync("0.hu.pool.ntp.org", 8);
+    //delay(1000);
+    //SerialAT.write("AT+CNTP");
 }
-
 
 void connectNetwork(){
 

@@ -4,6 +4,7 @@
 #include <SPI.h>
 #include <SD.h>
 
+#include <secret.h>
 #include <gsm_function.h>
 #include <bmp280_function.h>
 #include <logging.h>

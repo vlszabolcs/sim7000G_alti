@@ -2,12 +2,6 @@
 PubSubClient  mqtt(client);
 
 
-
-#define MQTT_BROKER   "io.adafruit.com"
-#define MQTT_PORT     1883
-#define MQTT_USER     "AxlHacke"
-#define MQTT_PASSWORD "aio_vXun76Y1l5DpdtDpgqLhh7FgM8QC"
-
 const char* pres_topic="AxlHacke/feeds/bme280.pressure";
 const char* temp_topic="AxlHacke/feeds/bme280.temperature";
 const char* humi_topic="AxlHacke/feeds/station.humidity";
