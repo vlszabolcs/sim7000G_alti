@@ -7,6 +7,8 @@
 #define SCREEN_ADDRESS 0x3C
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
+
+
 void screen_setup(){
     if (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
     Serial.println(F("SSD1306 allocation failed"));
@@ -19,7 +21,9 @@ void screen_setup(){
     display.setCursor(0, 0);
 }
 
-void gnss_connecting(){
+
+
+void dsp_gnss_connecting(){
     display.clearDisplay();
     display.setCursor(0, 0);
     display.print("GNSS connecting...");
@@ -30,7 +34,7 @@ void gnss_connecting(){
     display.display();
 }
 
-void gnss_conected(){
+void dsp_logging(){
     display.clearDisplay();
     display.setCursor(0, 0);
     display.println(String(lat)+";"+String(lon)+";"+String(gpsAlti));
@@ -40,7 +44,7 @@ void gnss_conected(){
     display.display();
 }
 
-void station_mode(){
+void dsp_station_mode(){
     display.clearDisplay();
     display.setCursor(0, 0);
     display.println((network_time()));

@@ -1,31 +1,30 @@
+#include <Adafruit_I2CDevice.h>
+#include <Adafruit_Sensor.h>
 #include <Adafruit_BME280.h>
 #include <Wire.h>
 
-Adafruit_BME280 envSensor;
+Adafruit_BME280 env_sensor;
 
-float pres,temp,presAlti,presCorrig,humi;
+float pres,temp,presAlti,pres_corrig,humi;
 String sensor_message;
 
-
-
-String bme280_data () {
-  pres = envSensor.readPressure() / 100.0F;
-  temp = envSensor.readTemperature()-1;
-  presAlti = envSensor.readAltitude(presCorrig);
-  humi = envSensor.readHumidity();
+String bme280_data () { //get sensor data 
+  pres = env_sensor.readPressure() / 100.0F;
+  temp = env_sensor.readTemperature()-1;
+  presAlti = env_sensor.readAltitude(pres_corrig);
+  humi = env_sensor.readHumidity();
   sensor_message= String(pres)  + "," + String(temp) + "," + String(humi) + "," +String(presAlti);
   return sensor_message;
- 
 }
 
-void justBME280(){
+void just_bme280(){     //station mode 
   if (gps_pwr_status){
-    Serial.println("GPS power status: "+String(disableGPS()));
+    Serial.println("GPS power status: "+String(disable_gps()));
   }
 
   bme280_data();
   Serial.println("#######################");
-  Serial.println(modem.getGSMDateTime(DATE_FULL));
+  Serial.println(network_time());
   Serial.print("Pres:");
   Serial.println(pres);
   Serial.print("Temp:");

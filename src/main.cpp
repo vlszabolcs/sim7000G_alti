@@ -1,56 +1,30 @@
 #include <Arduino.h>
-#include <Adafruit_I2CDevice.h>
-#include <Adafruit_Sensor.h>
-#include <SPI.h>
-#include <SD.h>
 
 #include <secret.h>
 #include <gsm_function.h>
-#include <bmp280_function.h>
+#include <sensor_function.h>
 #include <logging.h>
+
 int BP = 0;
-
-
-const int period= 1000;
-const int periodBat=1000;
-unsigned long time_now = 0;
-int function=1;
-#include <mqtt.h>
-#include <screen.h>
-int lastFunction;
-
-
+const int period_bat=1000;
 float v_bat = 0;
 const int VReads = 15;
 
-#define SD_MISO             2
-#define SD_MOSI             15
-#define SD_SCLK             14
-#define SD_CS               13
+const int period= 1000;
+unsigned long time_now = 0;
+int function=1;
+int last_function;
+
+#include <screen.h>
+#include <mqtt.h>
+
 
 #define PIN_BAT             35
 
 
 
-void sdCardSetup(){
- //Read data form SD Card
-  SPI.begin(SD_SCLK, SD_MISO, SD_MOSI);
-  if (!SD.begin(SD_CS)) {
-    Serial.println("Card Mount Failed");
-    return;
-  }
-  File fileRead = SD.open("/lastPresCalc.txt");
-  if (fileRead) {
-    presCorrig = fileRead.parseFloat();
-    Serial.println(presCorrig);
-    fileRead.close();
-  }
-  else {
-    Serial.println("Error to open last pressure calc.");
-  }
-}
 
-float mapBatt(float x, float in_min, float in_max, float out_min, float out_max) {
+float map_batt(float x, float in_min, float in_max, float out_min, float out_max) {
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
@@ -66,83 +40,86 @@ void read_bat() {         // reads and returns the battery voltage
     Read_buffer += (voltageBuffer[(VReads - 1) / 2]);
   }
   v_bat = (((float)(Read_buffer / VReads) / 4096) * 3600 * 2) / 1000;
-  BP = mapBatt(v_bat,2.5,4.2,0,100);     // get battery voltage as a percentage 0-100%
+  BP = map_batt(v_bat,2.5,4.2,0,100);     // get battery voltage as a percentage 0-100%
   if (BP < 0) { BP = 0; }
 }
 
 
 void setup(){
   Serial.begin(115200);
-
-  gsmSetup(); //GSM starting and setup
+  screen_setup();   //Screen setup
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  display.print("GSM setup");
+  display.display();
+  gsm_setup();
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  display.print("MQTT setup");
+  display.display();      //GSM modul start and setup
+  mqtt_setup();           //MQTT start and setup
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  display.print("SD card setup");
+  display.display();     
+  sd_card_setup();  //SD card setup 
+ 
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  display.print("BME setup");
+  display.display();
+  env_sensor.begin(0x76); //Start sensor , default setup
   
-  sdCardSetup(); //SDcar
-  screen_setup();
-
-  envSensor.begin(0x76);
-  
-  pinMode(LED_PIN, OUTPUT);
+  pinMode(LED_PIN, OUTPUT); //Set built in LED
   digitalWrite(LED_PIN, HIGH);
   pinMode(PIN_BAT, INPUT);
-  mqttSetup();
-
 }
 
 
 void loop(){
 
-  /*if (SerialAT.available()) {
-    SerialMon.write(SerialAT.read());
-  }
-  if (SerialMon.available()) {
-    SerialAT.write(SerialMon.read());
-  }*/
- if (Serial.available()){
-    lastFunction = function;
+ if (Serial.available()){     //Check serialMon for function changing
+    last_function = function;
     String c;
     c = Serial.readString();
     function=c.toInt();
     };
     
-   if (modem.isGprsConnected()) {  mqttLoop();}
+   if (modem.isGprsConnected()) {  mqtt_loop();} //MQTT if gprs connected
   
   switch(function) {
-    case 1: // Logging
+    case 1:                                       // Log mode (default)
 
     if (!gps_pwr_status){
-        Serial.println("GPS power status: "+String(enableGPS(0)));
-    
+        Serial.println("GPS power status: "+String(enable_gps(0))); //if GPS is off , turn on 
     }
 
-    if(millis() > time_now + period){
+    if(millis() > time_now + period){ //Wait period minute
         time_now = millis();
         read_bat();
-        
-       
-        String gnss_message=gpsLogging()+","+bme280_data()+","+BP;
-        if (gpsFix()){
-          logging_csv("GNSS",gnss_message);
-          gnss_conected();
+        String log_message=gps_logging()+","+bme280_data()+","+BP; //creat message for logging 
+        if (gps_fix()){                                            // if gps fixed start logging 
+          logging_csv("GNSS",log_message);                         // log
+          dsp_logging();                                           // to screen
 
         }else{
-          gnss_connecting();
+          dsp_gnss_connecting();                                    // to screen 
           Serial.println("don't logging");
-          Serial.println(gnss_message);
+          Serial.println(log_message);  
         }
     }
-      //Serial.println(head);
       break;
-    case 2: //BME Function
+    case 2:                             //station mode
       if(millis() > time_now + period){
         time_now = millis();
-        justBME280();
-        station_mode(); 
+        just_bme280();                  //sensor update
+        dsp_station_mode();             // to screen
       }
       break;
 
     case 3:
       
-      if(millis() > time_now + periodBat){
+      if(millis() > time_now + period_bat){
         time_now = millis();
 
         read_bat();
@@ -163,7 +140,7 @@ void loop(){
         Serial.print("Battery Percentage : "); Serial.print(BP);  Serial.println("%");  // 0-100%
       }
       break;
-    case 4:
+    case 4:   //Debug mode for GSM moduel (AT)
 
         while(1){
           while (SerialAT.available()) {

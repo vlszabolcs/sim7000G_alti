@@ -1,24 +1,21 @@
 #include <PubSubClient.h>
 PubSubClient  mqtt(client);
 
-
 const char* pres_topic="AxlHacke/feeds/bme280.pressure";
 const char* temp_topic="AxlHacke/feeds/bme280.temperature";
 const char* humi_topic="AxlHacke/feeds/station.humidity";
 const char* gps_topic="AxlHacke/feeds/sim7000g.gps";
 const char* device_func="AxlHacke/feeds/sim7000g.menu";
 const char* alti_topic="AxlHacke/feeds/sim7000g.altitude";
-
 const char* slp_topic="AxlHacke/feeds/station.slpressure";
 
-uint32_t lastReconnectAttempt = 0;
+uint32_t last_reconnect_attempt = 0;
 
-const int periodMQTT= 60000;
-unsigned long time_nowMQTT = 0;
-
+const int period_MQTT= 60000;
+unsigned long time_now_MQTT = 0;
 bool status=0;
 
-void mqttCallback(char* topic, byte* payload, unsigned int len) {
+void mqtt_callback(char* topic, byte* payload, unsigned int len) {
   Serial.print("Message arrived [");
   Serial.print(topic);
   Serial.print("]: ");
@@ -34,7 +31,7 @@ void mqttCallback(char* topic, byte* payload, unsigned int len) {
   if (String(topic)==String(slp_topic)){
     Serial.print("Ez nyomás: ");
     Serial.print(income);
-    presCorrig=income;
+    pres_corrig=income;
     (SD.open("/lastPresCalc.txt",FILE_WRITE)).print(income);
   }
   else if(String(topic)==String(device_func)){
@@ -47,7 +44,7 @@ void mqttCallback(char* topic, byte* payload, unsigned int len) {
 }
 
 
-boolean mqttConnect() {
+boolean mqtt_connect() {
   Serial.print("Connecting to ");
   Serial.print(MQTT_BROKER);
   // Connect to MQTT Broker
@@ -62,47 +59,47 @@ boolean mqttConnect() {
   Serial.println(" success");
   
   mqtt.subscribe(slp_topic);
-  mqtt.subscribe(humi_topic);
   mqtt.subscribe(device_func);
 
   return mqtt.connected();
 }
 
-bool mqttSetup(){
+bool mqtt_setup(){
+    
     
     delay(1000);
     mqtt.setServer(MQTT_BROKER, MQTT_PORT);
-    mqtt.setCallback(mqttCallback);
+    mqtt.setCallback(mqtt_callback);
     status = true;
     return status;
 }
 
-void mqttPublish ( const char* topicsPath,float data){
-    char conString[8];
-    dtostrf(data , 1, 2, conString);
-    Serial.print(topicsPath);
-    Serial.println(conString);
-    mqtt.publish(topicsPath, conString );
+void mqtt_publish ( const char* topics_path,float data){
+    char con_string[8];
+    dtostrf(data , 1, 2, con_string);
+    Serial.print(topics_path);
+    Serial.println(con_string);
+    mqtt.publish(topics_path, con_string );
 }
 
 
 
-void mqttLoop(){
+void mqtt_loop(){
   if (!mqtt.connected()) {
     Serial.println("=== MQTT NOT CONNECTED ===");
     // Reconnect every 10 seconds
     uint32_t t = millis();
-    if (t - lastReconnectAttempt > 10000L) {
-      lastReconnectAttempt = t;
-      if (mqttConnect()) { lastReconnectAttempt = 0; }
+    if (t - last_reconnect_attempt > 10000L) {
+      last_reconnect_attempt = t;
+      if (mqtt_connect()) { last_reconnect_attempt = 0; }
     }
     delay(100);
     return;
   }
     mqtt.loop();
-  if(millis() > time_nowMQTT + periodMQTT){
-    time_nowMQTT = millis();
-    mqttPublish(alti_topic,presAlti);
+  if(millis() > time_now_MQTT + period_MQTT){
+    time_now_MQTT = millis();
+    mqtt_publish(alti_topic,presAlti);
     
   }
 }
