@@ -8,7 +8,7 @@ Adafruit_BME280 env_sensor;
 float pres,temp,presAlti,pres_corrig,humi;
 String sensor_message;
 
-String bme280_data () { //get sensor data 
+String bme280_data () { //get sensor data
   pres = env_sensor.readPressure() / 100.0F;
   temp = env_sensor.readTemperature()-1;
   presAlti = env_sensor.readAltitude(pres_corrig);
@@ -17,13 +17,13 @@ String bme280_data () { //get sensor data
   return sensor_message;
 }
 
-void just_bme280(){     //station mode 
+void just_bme280(){     //station mode
   if (gps_pwr_status){
     Serial.println("GPS power status: "+String(disable_gps()));
   }
 
   bme280_data();
-  Serial.println("#######################");
+  Serial.println("#######################"); //legyenek azonosak az ilyen elvalasztok, egy masik file-ban ===== vol
   Serial.println(network_time());
   Serial.print("Pres:");
   Serial.println(pres);

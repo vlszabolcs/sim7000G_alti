@@ -57,7 +57,7 @@ boolean mqtt_connect() {
     return false;
   }
   Serial.println(" success");
-  
+
   mqtt.subscribe(slp_topic);
   mqtt.subscribe(device_func);
 
@@ -65,8 +65,8 @@ boolean mqtt_connect() {
 }
 
 bool mqtt_setup(){
-    
-    
+    // felesleges ures sor
+    // felesleges ures sor
     delay(1000);
     mqtt.setServer(MQTT_BROKER, MQTT_PORT);
     mqtt.setCallback(mqtt_callback);
@@ -100,7 +100,7 @@ void mqtt_loop(){
   if(millis() > time_now_MQTT + period_MQTT){
     time_now_MQTT = millis();
     mqtt_publish(alti_topic,presAlti);
-    
+
   }
 }
 

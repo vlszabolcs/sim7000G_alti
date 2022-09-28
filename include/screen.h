@@ -60,7 +60,7 @@ void dsp_station_mode(){
     display.print("Pres: ");
     display.print(pres);
     display.println("hPa");
- 
+
     display.display();
 }
 
