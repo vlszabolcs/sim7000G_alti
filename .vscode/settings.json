@@ -1,6 +1,13 @@
 {
     "files.associations": {
         "*.tpp": "cpp",
-        "*.tcc": "cpp"
+        "*.tcc": "cpp",
+        "istream": "cpp",
+        "ostream": "cpp",
+        "array": "cpp",
+        "functional": "cpp",
+        "tuple": "cpp",
+        "type_traits": "cpp",
+        "utility": "cpp"
     }
 }

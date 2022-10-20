@@ -1,17 +1,14 @@
 #include <PubSubClient.h>
+#include <ArduinoJson.h>
+
+StaticJsonDocument<200> doc;
+
 PubSubClient  mqtt(client);
-
-const char* pres_topic="AxlHacke/feeds/bme280.pressure";
-const char* temp_topic="AxlHacke/feeds/bme280.temperature";
-const char* humi_topic="AxlHacke/feeds/station.humidity";
-const char* gps_topic="AxlHacke/feeds/sim7000g.gps";
-const char* device_func="AxlHacke/feeds/sim7000g.menu";
-const char* alti_topic="AxlHacke/feeds/sim7000g.altitude";
-const char* slp_topic="AxlHacke/feeds/station.slpressure";
-
 uint32_t last_reconnect_attempt = 0;
 
-const int period_MQTT= 60000;
+const int peroid_MQTT = 60000;
+const int peroid_loc = 15000;
+unsigned long time_now_loc = 0;
 unsigned long time_now_MQTT = 0;
 bool status=0;
 
@@ -65,21 +62,36 @@ boolean mqtt_connect() {
 }
 
 bool mqtt_setup(){
-    // felesleges ures sor
-    // felesleges ures sor
-    delay(1000);
     mqtt.setServer(MQTT_BROKER, MQTT_PORT);
     mqtt.setCallback(mqtt_callback);
     status = true;
     return status;
 }
 
-void mqtt_publish ( const char* topics_path,float data){
+void float_publish ( const char* topics_path,float data){
     char con_string[8];
     dtostrf(data , 1, 2, con_string);
     Serial.print(topics_path);
     Serial.println(con_string);
     mqtt.publish(topics_path, con_string );
+}
+
+void location (){
+  String msg;
+
+  /*JsonArray value = doc.createNestedArray("value");
+  value.add(String(temp,1));
+  value.add(String(humi,0));
+  value.add(String(pres,2));*/
+  doc["value"] = String(temp,1);
+  doc["lat"] = String(lat,4);
+  doc["lon"] = String(lon,4);
+  doc["ele"] = String(pres_alti,2);
+  deserializeJson(doc,msg);
+  Serial.println(msg);
+  char Buf[150];
+  msg.to_char_array(Buf, 150);
+  mqtt.publish(gps_topic,Buf);
 }
 
 
@@ -97,11 +109,20 @@ void mqtt_loop(){
     return;
   }
     mqtt.loop();
-  if(millis() > time_now_MQTT + period_MQTT){
+  
+  if(millis() > time_now_MQTT + peroid_MQTT){
     time_now_MQTT = millis();
-    mqtt_publish(alti_topic,presAlti);
-
+    mqtt.publish(sim7000g_status,"1");
+    float_publish(alti_topic,pres_alti);
+    float_publish(pres_topic,pres);
   }
+
+  if(millis() > time_now_loc + peroid_loc){
+    time_now_loc= millis();
+    if (gnss_fix()){
+      location();  
+    }    
+  } 
 }
 
 

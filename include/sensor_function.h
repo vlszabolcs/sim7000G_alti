@@ -5,21 +5,21 @@
 
 Adafruit_BME280 env_sensor;
 
-float pres,temp,presAlti,pres_corrig,humi;
+float pres,temp,pres_alti,pres_corrig,humi;
 String sensor_message;
 
 String bme280_data () { //get sensor data
   pres = env_sensor.readPressure() / 100.0F;
-  temp = env_sensor.readTemperature()-1;
-  presAlti = env_sensor.readAltitude(pres_corrig);
+  temp = env_sensor.readTemperature();
+  pres_alti = env_sensor.readAltitude(pres_corrig);
   humi = env_sensor.readHumidity();
-  sensor_message= String(pres)  + "," + String(temp) + "," + String(humi) + "," +String(presAlti);
+  sensor_message= String(pres)  + "," + String(temp) + "," + String(humi) + "," +String(pres_alti);
   return sensor_message;
 }
 
-void just_bme280(){     //station mode
-  if (gps_pwr_status){
-    Serial.println("GPS power status: "+String(disable_gps()));
+void mode_station() {     //station mode
+  if (gps_pwr_status) {
+    Serial.println("GPS power status: "+String(disable_gnss()));
   }
 
   bme280_data();
@@ -33,4 +33,5 @@ void just_bme280(){     //station mode
   Serial.println(humi);
   Serial.println("#######################");
   Serial.println();
+  
 }

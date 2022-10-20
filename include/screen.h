@@ -34,23 +34,50 @@ void dsp_gnss_connecting(){
     display.display();
 }
 
-void dsp_logging(){
+float old_pres_alti=0;
+float uphill=0;
+float downhill=0;
+
+void ele(){
+    float del_alti;
+    if (old_pres_alti!=0){
+        del_alti=pres_alti-old_pres_alti;
+    }
+    else{
+        old_pres_alti=pres_alti;
+    }
+    
+    if (del_alti>0){
+        uphill+=del_alti;
+        old_pres_alti=pres_alti;
+    } 
+    else{
+        downhill+=del_alti;
+        old_pres_alti=pres_alti;  
+    }
+}
+
+void dsp_loging(){
+    ele();
     display.clearDisplay();
     display.setCursor(0, 0);
-    display.println(String(lat)+";"+String(lon)+";"+String(gpsAlti));
-    display.println(bme280_data());
+    display.println(network_time());
+    display.println(String(lat)+";"+String(lon));
+    display.print("A:");
+    display.print(pres_alti);
+    display.print(" G:");
+    display.println(gpsAlti);
     display.print((BP));
     display.println("%");
     display.display();
 }
 
+
+
 void dsp_station_mode(){
     display.clearDisplay();
     display.setCursor(0, 0);
     display.println((network_time()));
-   /* display.print(("Bat"));
-    display.print((BP));
-    display.println("%");*/
     display.print("Temp: ");
     display.print(temp);
     display.println("*C");
@@ -60,8 +87,9 @@ void dsp_station_mode(){
     display.print("Pres: ");
     display.print(pres);
     display.println("hPa");
-
     display.display();
 }
+
+
 
 

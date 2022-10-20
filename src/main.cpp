@@ -4,6 +4,7 @@
 #include <gsm_function.h>
 #include <sensor_function.h>
 #include <logging.h>
+
 // +-*/= es == operatorok altalaban szokozzel vannak korbeveve
 // figyelj a behuzasra legyen azonos minden file-ben pl 2 szokoz! nem tab!
 int BP = 0;
@@ -11,8 +12,10 @@ const int period_bat = 1000;
 float v_bat = 0;
 const int VReads = 15;
 
-const int periodi = 1000;
+const int period = 1000;
 unsigned long time_now = 0;
+const int station_period = 60000;
+unsigned long station_time_now = 0;
 int function = 1;
 int last_function;
 
@@ -37,7 +40,6 @@ float map_batt(float x, float in_min, float in_max, float out_min, float out_max
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
-// kommenteknel is azonos strukturat kovess: <code> // comment (egy szokoz a kod es a // kozott)
 void read_bat() {         // reads and returns the battery voltage
   float voltageBuffer[VReads];
   uint32_t Read_buffer = 0;
@@ -54,33 +56,13 @@ void read_bat() {         // reads and returns the battery voltage
 }
 
 
-void setup(){
+void setup() {
   Serial.begin(115200);
-  screen_setup();   //Screen setup
-  //ezeket ki lehetne szervezni egy fgv-be es akkor csak annyit kene beirni pl.: PrintDisplay("GSM setup", 0, 0,)
-  //atlathatobb lenne az init resz
-  display.clearDisplay();
-  display.setCursor(0, 0);
-  display.print("GSM setup");
-  display.display();
-  gsm_setup();
-  display.clearDisplay();
-  display.setCursor(0, 0);
-  display.print("MQTT setup");
-  display.display();      //GSM modul start and setup
-  mqtt_setup();           //MQTT start and setup
-  display.clearDisplay();
-  display.setCursor(0, 0);
-  display.print("SD card setup");
-  display.display();
+  screen_setup(); //Screen setup
+  gsm_setup(); //GSM modul start and setup
+  mqtt_setup(); //MQTT start and setup
   sd_card_setup();  //SD card setup
-
-  display.clearDisplay();
-  display.setCursor(0, 0);
-  display.print("BME setup");
-  display.display();
   env_sensor.begin(0x76); //Start sensor , default setup
-
   pinMode(LED_PIN, OUTPUT); //Set built in LED
   digitalWrite(LED_PIN, HIGH);
   pinMode(PIN_BAT, INPUT);
@@ -89,7 +71,7 @@ void setup(){
 
 void loop(){
 
- if (Serial.available()){     //Check serialMon for function changing
+ if (Serial.available()) {     //Check serialMon for function changing
     last_function = function;
     String c;
     c = Serial.readString();
@@ -102,41 +84,47 @@ void loop(){
     case 1:                                       // Log mode (default)
 
     if (!gps_pwr_status){
-        Serial.println("GPS power status: "+String(enable_gps(0))); //if GPS is off , turn on
+        Serial.println("GPS power status: "+String(enable_gnss(0))); //if GPS is off , turn on
     }
 
-    if(millis() > time_now + period){ //Wait period minute
+    if(millis() > time_now + period) { //Wait period minute
         time_now = millis();
         read_bat();
-        String log_message=gps_logging()+","+bme280_data()+","+BP; //creat message for logging
-        if (gps_fix()){                                            // if gps fixed start logging
+        String log_message=gnss_data()+","+bme280_data()+","+BP; //creat message for loging
+        if (gnss_fix()) {                                            // if gps fixed start loging
           logging_csv("GNSS",log_message);                         // log
-          dsp_logging();                                           // to screen
+          dsp_loging();  
 
-        }else{
+        }else {
           dsp_gnss_connecting();                                    // to screen
-          Serial.println("don't logging");
+          Serial.println("don't loging");
           Serial.println(log_message);
         }
     }
       break;
     case 2:                             //station mode
-      if(millis() > time_now + period){
-        time_now = millis();
-        just_bme280();                  //sensor update
-        dsp_station_mode();             // to screen
+      if(millis() > station_time_now + station_period){
+        station_time_now = millis();
+        String msg= network_time() + ","+bme280_data();
+        logging_csv("BME280",msg);                 
       }
+
+      if(millis() > time_now + period){
+        time_now = millis();                 //sensor update
+        mode_station();
+        dsp_station_mode();  // to screen
+      }
+
       break;
 
     case 3:
 
-      if(millis() > time_now + period_bat){
+      if(millis() > time_now + period_bat) {
         time_now = millis();
 
         read_bat();
         String bat_message = network_time() + "," + String(v_bat) + "," + String(BP);
         logging_csv("BAT",bat_message);
-
 
         display.clearDisplay();
         display.setCursor(0, 0);
@@ -146,7 +134,6 @@ void loop(){
         display.println("%");
         display.display();
 
-
         Serial.print("Battery Voltage : "); Serial.println(v_bat);  // 2.5v - 4.2v //egy sor egy utasitas
         Serial.print("Battery Percentage : "); Serial.print(BP);  Serial.println("%");  // 0-100%
       }
@@ -155,10 +142,10 @@ void loop(){
 
         while(1){
           while (SerialAT.available()) {
-            SerialMon.write(SerialAT.read());
+            Serial.write(SerialAT.read());
           }
-          while (SerialMon.available()) {
-            SerialAT.write(SerialMon.read());
+          while (Serial.available()) {
+            SerialAT.write(Serial.read());
           }
         }
 

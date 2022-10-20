@@ -1,18 +1,18 @@
 #include <SPI.h>
 #include <SD.h>
 
+
+
 #define SD_MISO             2
 #define SD_MOSI             15
 #define SD_SCLK             14
 #define SD_CS               13
-
+  
 String head = "GNSS status,Fix status,dTime,Latitude,Longitude,MSL Altitude,Speed,Course,Fix Mode,Reserved1,HDOP,PDOP,VDOP,Reserved2,GNSS Satellites in View,GPS Satellites Used,GLONASS Satellites used,Reserved3,C/N0 max,HPA,VPA,pressure,temperature,humidity,altitude,Battery";
 String path;
 File file;
 bool once_run = false;
 bool file_name_exist= false;
-
-
 
 void sd_card_setup(){    //SD card setup
   SPI.begin(SD_SCLK, SD_MISO, SD_MOSI);
@@ -91,6 +91,7 @@ void logging_csv(String log_mode, String message){      //logging
             file.flush();
             
             Serial.println("Logging run!");
+            Serial.println(message);
         }else{Serial.println("Logging file faild to open!");}    
     }else{
         Serial.println("don't logging");
